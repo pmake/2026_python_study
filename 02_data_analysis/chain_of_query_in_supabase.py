@@ -4,7 +4,9 @@ import pandas as pd
 
 
 response = (
-    supabase.table("orders")
+    supabase
+    .schema('public') # 明確指定要查詢的schema，未指定時會使用預設值
+    .table("orders")
     .select("orderid, employeeid, customerid, orderdate")  # 選擇特定欄位
     .eq("employeeid", 3)  # WHERE total_amount >= 1000
     .order("orderdate", desc=True)  # ORDER BY created_at DESC
