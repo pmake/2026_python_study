@@ -7,3 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.139.0",
 ]
+
+# 宣告工作區包含所有子資料夾
+[tool.uv.workspace]
+members = ["*"]
