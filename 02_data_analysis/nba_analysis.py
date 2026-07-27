@@ -27,9 +27,22 @@ response = (
 df = pd.DataFrame(response.data)
 print(df)
 
+
 if df.empty:
     print('查無資料，未產生csv檔。')
 else:
+    # 將嵌套的 json 欄位展開為平坦欄位 (Flatten)
+    # 使用 「串列生成式（List Comprehension）」搭配「多欄位同時指派」
+    # Pandas 支援將一個包含 Tuple 的 List（例如 [('Lakers', 'West'), ('Celtics', 'East')]）直接賦值給多個欄位 df[["team_name", "conf_name"]]，
+    # 它會自動將第一位對應到 team_name，第二位對應到 conf_name。
+    if 'teams' in df.columns:
+        df[['fullname', 'confname']] = [ 
+            (x.get('fullname'), x.get('confname')) if isinstance(x, dict) else (None, None) for x in df['teams']
+              ]
+        
+        df = df.drop(columns=['teams']) # 刪除原始嵌套欄位
+    
+
     output_dir =  Path('02_data_analysis/outputs')
     output_dir.mkdir(parents=True, exist_ok=True) # 自動建立資料夾(若不存在)
 
