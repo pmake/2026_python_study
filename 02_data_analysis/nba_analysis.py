@@ -3,8 +3,12 @@ from database import supabase
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
-team_full_name = 'Los Angeles Lakers'
+# 1. 定義查詢參數（使用 Literal 提供更安全的型別檢查）
+Conference = Literal["West", "East"]
+target_conf: Conference = "West"
+team_full_name: str = "Los Angeles Lakers"
 
 response = (
     supabase
@@ -13,8 +17,9 @@ response = (
     # 使用supabase !inner語法，join teams table 選擇回傳特定欄位, 例中要求傳回fullname, 留空則不傳回teams table的任何欄位
     # players和teams在資料庫中必須有設定關聯的外鍵，此例已在supabase設定好了teamid為foreign key，背後會先用外鍵去關聯然後用team_full_name過濾
     # supabase中的RLS如果有開，也要設定能讀取的policy才能正常從外部查詢
-    .select("*, teams!inner(fullname)")  
+    .select("*, teams!inner(fullname,confname)")  
     .eq('teams.fullname', team_full_name)
+    .eq('teams.confname', target_conf)
     .execute()
 )
 
@@ -30,7 +35,8 @@ else:
 
     # 加上時間戳記，避免覆蓋舊檔案
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_path = output_dir / f'lakers_players_{timestamp}.csv'
+    # '/'是path物件的特殊符號，用以便利的跨平台串接路徑，會自動依平台轉換正確的路徑
+    file_path = output_dir / f'lakers_players_west_{timestamp}.csv'
 
     # 4. 儲存為 CSV
     df.to_csv(
