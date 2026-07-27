@@ -24,7 +24,8 @@ response = (
 )
 
 # 直接轉為 Pandas DataFrame
-df = pd.DataFrame(response.data)
+# 使用更高效的dict結構平坦化方法，由於supabase型別較不嚴謹，指接指派給json_normalize會有警告，因此:
+df = pd.json_normalize(response.data)
 print(df)
 
 
@@ -35,12 +36,12 @@ else:
     # 使用 「串列生成式（List Comprehension）」搭配「多欄位同時指派」
     # Pandas 支援將一個包含 Tuple 的 List（例如 [('Lakers', 'West'), ('Celtics', 'East')]）直接賦值給多個欄位 df[["team_name", "conf_name"]]，
     # 它會自動將第一位對應到 team_name，第二位對應到 conf_name。
-    if 'teams' in df.columns:
-        df[['fullname', 'confname']] = [ 
-            (x.get('fullname'), x.get('confname')) if isinstance(x, dict) else (None, None) for x in df['teams']
-              ]
+    # if 'teams' in df.columns:
+    #     df[['fullname', 'confname']] = [ 
+    #         (x.get('fullname'), x.get('confname')) if isinstance(x, dict) else (None, None) for x in df['teams']
+    #           ]
         
-        df = df.drop(columns=['teams']) # 刪除原始嵌套欄位
+    #     df = df.drop(columns=['teams']) # 刪除原始嵌套欄位
     
 
     output_dir =  Path('02_data_analysis/outputs')
