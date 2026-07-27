@@ -58,9 +58,6 @@ print(result_grouped_processed.loc[:])
 
 # 將已建立的dataframe物件存入excel檔案的不同工作表
 
-# 1.建立全新工作簿
-wb = openpyxl.Workbook()
-
 output_path = target_dir / 'nba分析.xlsx'
 
 
