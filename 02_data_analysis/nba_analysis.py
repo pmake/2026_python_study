@@ -3,7 +3,7 @@ from database import supabase
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Any, cast
 
 # 1. 定義查詢參數（使用 Literal 提供更安全的型別檢查）
 Conference = Literal["West", "East"]
@@ -25,7 +25,12 @@ response = (
 
 # 直接轉為 Pandas DataFrame
 # 使用更高效的dict結構平坦化方法，由於supabase型別較不嚴謹，指接指派給json_normalize會有警告，因此:
-df = pd.json_normalize(response.data)
+# 使用 cast 進行型別指引 (Type Assertion)
+# 告訴 Pylance： response.data 確實是 list[dict[str, Any]]
+clean_data = cast(list[dict[str, Any]], response.data)
+# 傳入 json_normalize，警告完美消失！
+# df = pd.json_normalize(response.data)
+df = pd.json_normalize(clean_data)
 print(df)
 
 
