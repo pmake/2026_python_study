@@ -1,0 +1,125 @@
+import pandas as pd
+from pathlib import Path
+import openpyxl
+from openpyxl.styles import Alignment, Font, PatternFill
+
+target_dir = Path('02_data_analysis/outputs')
+target_player_file_path = target_dir / 'nba_players.csv'
+target_career_file_path = target_dir / 'nba_career_summaries.csv'
+target_team_file_path = target_dir / 'nba_teams.csv'
+
+
+players_df = pd.read_csv(target_player_file_path)
+career_df = pd.read_csv(target_career_file_path)
+teams_df = pd.read_csv(target_team_file_path)
+
+# 找出每場平均得分最高的10名球員
+players_top10_ppg = (
+    players_df
+    .merge(career_df, on='personid', how='inner')
+    .nlargest(10, 'ppg', keep='all')
+    .sort_values(by='ppg',ascending=False) 
+    .reset_index(drop=True)
+)
+
+print("ppg排名前10球員清單：")
+print(players_top10_ppg.loc[:, ['firstname', 'lastname', 'ppg']])
+
+# ppg >= 20
+players_ppg_over_20 = (
+    players_df
+    .merge(career_df, on='personid', how='inner')
+    .merge(teams_df, on='teamid', how='left')
+    .query("ppg >= 20")
+    .sort_values(by='fullname') 
+    .reset_index(drop=True)
+)
+
+print("ppg >= 20：")
+print(players_ppg_over_20.loc[:, ['fullname', 'firstname', 'lastname', 'ppg', 'apg', 'rpg']])
+
+# 多重條件
+players_multi_conditions = (
+    players_df
+    .merge(career_df, on='personid', how='inner')
+    .query("ppg >= 20 and rpg >= 5 and apg >= 3")
+    .sort_values(by='ppg',ascending=False) 
+    .reset_index(drop=True)
+)
+
+print("多重條件過濾：")
+print(players_multi_conditions.loc[:, ['firstname', 'lastname', 'ppg', 'apg', 'rpg']])
+
+# 分群處理
+result_grouped_processed = (
+    players_df
+    .merge(career_df, on='personid', how='inner') # inner, 兩邊都要有才是有效資料。
+    .merge(teams_df, on='teamid', how='left') # left, 左表有就有效，比對不到會回傳NaN補上空資料。
+    # 是否用inner依需求，當需要嚴格滿足的時候就用inner，例如球員必須要有職涯資料，只是要補充非必要資訊時可用left，
+    # 例如要統計的需求和是否有team無關，而是以球員為主，此時team的資料可以用left加入，即時比對不到也不會讓球員被過濾掉
+    .groupby(['teamid', 'fullname'],dropna=False) # 加入fullname易於識別, dropna=False設定當分組中包含NaN數據時不會把整組過濾
+    .agg(
+        count_ppg_over_20=('ppg', lambda x: (x >= 20).sum()), # 對每個分組做處理，指定欄位和處理方式
+        count_rpg_over_5=('rpg', lambda x: (x >= 5).sum()),
+        count_apg_over_3=('apg', lambda x: (x > 3).sum())
+    )
+    .sort_values(by=['fullname', 'teamid'])
+    .reset_index()
+)
+
+print("分群處理：")
+print(result_grouped_processed.loc[:])
+
+# 將已建立的dataframe物件存入excel檔案的不同工作表
+
+# 先過濾要儲存的欄位
+players_top10_ppg = players_top10_ppg.loc[:, ['firstname', 'lastname', 'ppg']]
+players_ppg_over_20 = players_ppg_over_20.loc[:, ['fullname', 'firstname', 'lastname', 'ppg']]
+players_multi_conditions = players_multi_conditions.loc[:, ['firstname', 'lastname', 'ppg', 'apg', 'rpg']]
+
+output_path = target_dir / 'nba分析.xlsx'
+
+
+# 使用 pd.ExcelWriter 上下文管理器 (自動處理開啟與關閉)
+with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+    players_top10_ppg.to_excel(writer, sheet_name="ppg排名前10球員清單", index=False)
+    players_ppg_over_20.to_excel(writer, sheet_name="ppg超過20球員清單", index=False)
+    players_multi_conditions.to_excel(writer, sheet_name="多重條件", index=False)
+    result_grouped_processed.to_excel(writer, sheet_name="球隊表現統計數據", index=False)
+
+    print("多工作表 Excel 建立完成！")
+
+    # -------------------------------------------------------------
+    # 設定 "ppg超過20球員清單" 的分組斑馬紋
+    # -------------------------------------------------------------
+    ws = writer.sheets["ppg超過20球員清單"]
+
+    # 定義兩種交替背景顏色 (16進位 Hex 色碼)
+    fill_color_a = PatternFill(
+        start_color="FFFFFF", end_color="FFFFFF", fill_type="solid"
+    )  # 純白
+    fill_color_b = PatternFill(
+        start_color="F2F4F8", end_color="F2F4F8", fill_type="solid"
+    )  # 柔和淺灰藍
+
+    current_fill = fill_color_a
+    previous_name = None
+
+    # 從第 2 列開始走訪 (第 1 列是 Header)
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+        # row[0] 對應第一欄 (fullname)
+        current_name = row[0].value
+
+        # 當 fullname 改變時，切換填滿顏色
+        if previous_name is not None and current_name != previous_name:
+            current_fill = (
+                fill_color_b if current_fill == fill_color_a else fill_color_a
+            )
+
+        # 套用顏色至該列的所有儲存格
+        for cell in row:
+            cell.fill = current_fill
+
+        previous_name = current_name
+
+    print("多工作表 Excel 建立與動態斑馬紋格式設定完成！")
