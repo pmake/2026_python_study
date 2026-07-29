@@ -221,3 +221,4 @@ __marimo__/
 # by Chris
 *.csv
 *.xlsx
+02_data_analysis/outputs/*
