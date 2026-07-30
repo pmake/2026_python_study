@@ -1,0 +1,5 @@
+interface:
+  display_name: "Strict Code Editing"
+  short_description: "Apply strict execution rules when creating or modifying source code directly."
+policy:
+  allow_implicit_invocation: false
