@@ -6,7 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.139.0",
+    "02-data-analysis",
 ]
+
+[tool.uv.sources]
+02-data-analysis = { workspace = true }
 
 # 宣告工作區包含所有子資料夾
 [tool.uv.workspace]
