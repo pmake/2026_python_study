@@ -1,17 +1,49 @@
+import sys
+from pathlib import Path
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-from pathlib import Path
 
-# 建立基礎路徑
-BASE_DIR = Path.cwd()
-OUTPUT_DIR = BASE_DIR / '02_data_analysis' / 'files'
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+# 建立基礎路徑 (相容 PyInstaller 打包與一般 Python 腳本執行)
+if getattr(sys, 'frozen', False):
+    # PyInstaller 打包後的執行檔所在目錄
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    # 一般 Python 腳本執行目錄
+    BASE_DIR = Path(__file__).resolve().parent
 
-INPUT_SETTING = OUTPUT_DIR / '系統設定' / '好寶寶系統設定.xlsx'
-INPUT_SERVICE = OUTPUT_DIR / '系統撈出的當月工時放這' / '服務紀錄總表.xlsx'
-OUTPUT_PAYROLL = OUTPUT_DIR / '產出統計報表' / '薪資單.xlsx'
+OUTPUT_DIR = BASE_DIR / 'files'
+
+# 自動建立所需資料夾結構
+DIR_SETTING = OUTPUT_DIR / '系統設定'
+DIR_SERVICE = OUTPUT_DIR / '系統撈出的當月工時放這'
+DIR_PAYROLL = OUTPUT_DIR / '產出統計報表'
+
+DIR_SETTING.mkdir(parents=True, exist_ok=True)
+DIR_SERVICE.mkdir(parents=True, exist_ok=True)
+DIR_PAYROLL.mkdir(parents=True, exist_ok=True)
+
+INPUT_SETTING = DIR_SETTING / '好寶寶系統設定.xlsx'
+INPUT_SERVICE = DIR_SERVICE / '服務紀錄總表.xlsx'
+OUTPUT_PAYROLL = DIR_PAYROLL / '薪資單.xlsx'
+
+
+def check_input_files_exist():
+    """檢查必要的輸入 Excel 檔案是否存在"""
+    missing = []
+    if not INPUT_SETTING.exists():
+        missing.append(f" - {INPUT_SETTING}")
+    if not INPUT_SERVICE.exists():
+        missing.append(f" - {INPUT_SERVICE}")
+    
+    if missing:
+        print("\n【警告】找不到必要的輸入 Excel 檔案：")
+        for m in missing:
+            print(m)
+        print("\n請將對應的 Excel 檔案放入上述目錄後重新執行。")
+        return False
+    return True
 
 
 def load_input_data():
@@ -376,10 +408,19 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
 
 def main():
     print("=== 開始執行保母薪資單與工時統計分析 ===")
-    df_emp, df_hol, df_srv = load_input_data()
-    emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates = clean_and_process_data(df_emp, df_hol, df_srv)
-    build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates)
-    print(f"=== 分析完成！異常紀錄筆數: {len(anomalies)} ===")
+    if not check_input_files_exist():
+        input("\n請按 Enter 鍵結束...")
+        return
+        
+    try:
+        df_emp, df_hol, df_srv = load_input_data()
+        emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates = clean_and_process_data(df_emp, df_hol, df_srv)
+        build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates)
+        print(f"\n=== 分析完成！異常紀錄筆數: {len(anomalies)} ===")
+    except Exception as e:
+        print(f"\n【執行發生錯誤】{e}")
+    finally:
+        input("\n請按 Enter 鍵結束...")
 
 if __name__ == '__main__':
     main()
