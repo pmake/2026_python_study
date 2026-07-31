@@ -26,7 +26,7 @@ DIR_PAYROLL.mkdir(parents=True, exist_ok=True)
 
 INPUT_SETTING = DIR_SETTING / '好寶寶系統設定.xlsx'
 INPUT_SERVICE = DIR_SERVICE / '服務紀錄總表.xlsx'
-OUTPUT_PAYROLL = DIR_PAYROLL / '薪資單.xlsx'
+OUTPUT_PAYROLL = DIR_PAYROLL / '薪資單工時統計表.xlsx'
 
 
 def check_input_files_exist():
@@ -204,7 +204,7 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
 
 
 def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates):
-    """使用 openpyxl 建立薪資單.xlsx 包含四種工作表"""
+    """使用 openpyxl 建立薪資單工時統計表.xlsx 包含四種工作表"""
     wb = openpyxl.Workbook()
     # 移除預設工作表
     wb.remove(wb.active)
@@ -403,11 +403,11 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
             
     # 存檔
     wb.save(OUTPUT_PAYROLL)
-    print(f"成功產出薪資單: {OUTPUT_PAYROLL}")
+    print(f"成功產出薪資單工時統計表: {OUTPUT_PAYROLL}")
 
 
 def main():
-    print("=== 開始執行保母薪資單與工時統計分析 ===")
+    print("=== 開始執行保母薪資單工時統計表與工時統計分析 ===")
     if not check_input_files_exist():
         input("\n請按 Enter 鍵結束...")
         return
