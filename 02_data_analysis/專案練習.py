@@ -18,14 +18,17 @@ OUTPUT_DIR = BASE_DIR / 'files'
 # 自動建立所需資料夾結構
 DIR_SETTING = OUTPUT_DIR / '系統設定'
 DIR_SERVICE = OUTPUT_DIR / '系統撈出的當月工時放這'
+DIR_TEMPLATE = OUTPUT_DIR / '薪資單表單'
 DIR_PAYROLL = OUTPUT_DIR / '產出統計報表'
 
 DIR_SETTING.mkdir(parents=True, exist_ok=True)
 DIR_SERVICE.mkdir(parents=True, exist_ok=True)
+DIR_TEMPLATE.mkdir(parents=True, exist_ok=True)
 DIR_PAYROLL.mkdir(parents=True, exist_ok=True)
 
 INPUT_SETTING = DIR_SETTING / '好寶寶系統設定.xlsx'
 INPUT_SERVICE = DIR_SERVICE / '服務紀錄總表.xlsx'
+INPUT_TEMPLATE = DIR_TEMPLATE / '好寶寶薪資格式.xlsx'
 OUTPUT_PAYROLL = DIR_PAYROLL / '薪資單工時統計表.xlsx'
 
 
@@ -36,6 +39,8 @@ def check_input_files_exist():
         missing.append(f" - {INPUT_SETTING}")
     if not INPUT_SERVICE.exists():
         missing.append(f" - {INPUT_SERVICE}")
+    if not INPUT_TEMPLATE.exists():
+        missing.append(f" - {INPUT_TEMPLATE}")
     
     if missing:
         print("\n【警告】找不到必要的輸入 Excel 檔案：")
@@ -60,7 +65,7 @@ def load_input_data():
 
 def clean_and_process_data(df_emp, df_hol, df_srv):
     """
-    清洗資料、轉場加時計算、每日工時分段（以分鐘為單位），並收集異常紀錄。
+    清洗資料、轉場加時獨立計算、每日工時分段（以分鐘為單位），並收集異常紀錄。
     """
     anomalies = []
     
@@ -128,8 +133,7 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
         emp_type = emp_info['工作類別']
         is_holiday = date_str in holiday_set
         
-        # 1. 轉場加時計算
-        # 按排班時間排序
+        # 1. 轉場加時計算 (按排班時間排序)
         sorted_group = group.sort_values(by='排班時間')
         addresses = sorted_group['居住地址'].tolist()
         
@@ -140,26 +144,31 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
                 
         transit_minutes = transit_count * 15
         service_minutes = sorted_group['duration_min'].sum()
-        total_daily_minutes = service_minutes + transit_minutes
+        
+        # 轉場工時完全獨立統計，不併入當日總工時加總計算 (僅採計照顧服務時間)
+        total_daily_minutes = service_minutes
         
         # 2. 轉場加時欄位歸類 (平日轉場加時 vs 假日轉場加時)
         weekday_transit = 0 if is_holiday else transit_minutes
         weekend_transit = transit_minutes if is_holiday else 0
         
-        # 3. 當日工時分段切片 (單位: 分鐘)
-        # Cap total billable minutes at 12h (720m)
+        # 3. 當日服務工時分段切片 (單位: 分鐘，上限 12 小時 = 720 分鐘)
         billable_minutes = min(total_daily_minutes, 720)
         
         norm_min = 0
         ot_9_10_min = 0
         ot_11_12_min = 0
         hol_0_2_min = 0
-        hol_3_12_min = 0
+        hol_3_8_min = 0
+        hol_9_12_min = 0
         
         if emp_type == '假日班':
             if is_holiday:
                 hol_0_2_min = min(billable_minutes, 120)
-                hol_3_12_min = max(0, billable_minutes - 120)
+                if billable_minutes > 120:
+                    hol_3_8_min = min(billable_minutes - 120, 360)
+                if billable_minutes > 480:
+                    hol_9_12_min = min(billable_minutes - 480, 240)
             else:
                 # 假日班於平日出勤 (異常排班紀錄)
                 norm_min = billable_minutes
@@ -172,7 +181,10 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
         else:  # 常日班
             if is_holiday:
                 hol_0_2_min = min(billable_minutes, 120)
-                hol_3_12_min = max(0, billable_minutes - 120)
+                if billable_minutes > 120:
+                    hol_3_8_min = min(billable_minutes - 120, 360)
+                if billable_minutes > 480:
+                    hol_9_12_min = min(billable_minutes - 480, 240)
             else:
                 norm_min = min(billable_minutes, 480)
                 if billable_minutes > 480:
@@ -186,7 +198,8 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
             '平日加班_11_12h': ot_11_12_min,
             '平日轉場加時': weekday_transit,
             '假日工時_0_2h': hol_0_2_min,
-            '假日工時_3_12h': hol_3_12_min,
+            '假日工時_3_8h': hol_3_8_min,
+            '假日工時_9_12h': hol_9_12_min,
             '假日轉場加時': weekend_transit,
         }
         
@@ -206,10 +219,9 @@ def clean_and_process_data(df_emp, df_hol, df_srv):
 def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates):
     """使用 openpyxl 建立薪資單工時統計表.xlsx 包含四種工作表"""
     wb = openpyxl.Workbook()
-    # 移除預設工作表
     wb.remove(wb.active)
     
-    # 樣式設定 (全表統一風格)
+    # 樣式設定
     font_header = Font(name='微軟正黑體', size=11, bold=True, color='FFFFFF')
     fill_header = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
     font_data = Font(name='微軟正黑體', size=10)
@@ -231,7 +243,7 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
     detail_headers = [
         '日期', '員工類別(常日班/假日班)', '正常工時時數(0~8小時)',
         '平日加班時數(9~10小時)', '平日加班時數(11~12小時)', '平日轉場加時',
-        '假日工時(0~2小時)', '假日工時(3~12小時)', '假日轉場加時'
+        '假日工時(0~2小時)', '假日工時(3~8小時)', '假日工時(9~12小時)', '假日轉場加時'
     ]
     
     stat_last_day_row = 1 + len(all_dates)
@@ -255,7 +267,7 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
         for date_str in all_dates:
             day_data = emp_records.get(date_str, {
                 '正常工時': 0, '平日加班_9_10h': 0, '平日加班_11_12h': 0,
-                '平日轉場加時': 0, '假日工時_0_2h': 0, '假日工時_3_12h': 0, '假日轉場加時': 0
+                '平日轉場加時': 0, '假日工時_0_2h': 0, '假日工時_3_8h': 0, '假日工時_9_12h': 0, '假日轉場加時': 0
             })
             
             row_val = [
@@ -266,16 +278,17 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
                 day_data['平日加班_11_12h'],
                 day_data['平日轉場加時'],
                 day_data['假日工時_0_2h'],
-                day_data['假日工時_3_12h'],
+                day_data['假日工時_3_8h'],
+                day_data['假日工時_9_12h'],
                 day_data['假日轉場加時']
             ]
             ws.append(row_val)
             
-        # 格式與邊界調整 (Row 2 至 stat_last_day_row)
+        # 格式與邊界調整
         for row_idx in range(2, stat_last_day_row + 1):
             ws.cell(row=row_idx, column=1).alignment = align_center
             ws.cell(row=row_idx, column=2).alignment = align_center
-            for c_idx in range(1, 10):
+            for c_idx in range(1, 11):
                 cell = ws.cell(row=row_idx, column=c_idx)
                 cell.font = font_data
                 cell.border = thin_border
@@ -288,7 +301,7 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
     stat_headers = [
         '員工姓名', '職稱', '身份證字號', '出生年月日', '員工類別(常日班/假日班)',
         '正常工時時數(0~8小時)', '平日加班時數(9~10小時)', '平日加班時數(11~12小時)',
-        '平日轉場加時', '假日工時(0~2小時)', '假日工時(3~12小時)', '假日轉場加時'
+        '平日轉場加時', '假日工時(0~2小時)', '假日工時(3~8小時)', '假日工時(9~12小時)', '假日轉場加時'
     ]
     ws_stat.append(stat_headers)
     for col_num in range(1, len(stat_headers) + 1):
@@ -297,30 +310,31 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
         cell.fill = fill_header
         cell.alignment = align_center
         
-    stat_row_map = {}  # nanny_name -> row_index in 員工工時統計表
+    stat_row_map = {}
     row_counter = 2
     for nanny_name, emp_info in emp_dict.items():
         s_name = emp_info['sheet_name']
         stat_row_map[nanny_name] = row_counter
         
-        # 使用 /60 Excel 公式轉換為小時 (動態列範圍 C2:C{stat_last_day_row})
+        # 使用 /60 Excel 公式轉換為小時
         row_val = [
             emp_info['姓名'],
             emp_info['職稱'],
             emp_info['身分證字號'],
             emp_info['出生日期'],
             emp_info['工作類別'],
-            f"=SUM('{s_name}'!C2:C{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!D2:D{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!E2:E{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!F2:F{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!G2:G{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!H2:H{stat_last_day_row})/60",
-            f"=SUM('{s_name}'!I2:I{stat_last_day_row})/60"
+            f"=SUM('{s_name}'!C2:C{stat_last_day_row})/60",  # 正常工時
+            f"=SUM('{s_name}'!D2:D{stat_last_day_row})/60",  # 平日加班 9-10h
+            f"=SUM('{s_name}'!E2:E{stat_last_day_row})/60",  # 平日加班 11-12h
+            f"=SUM('{s_name}'!F2:F{stat_last_day_row})/60",  # 平日轉場加時
+            f"=SUM('{s_name}'!G2:G{stat_last_day_row})/60",  # 假日工時 0-2h
+            f"=SUM('{s_name}'!H2:H{stat_last_day_row})/60",  # 假日工時 3-8h
+            f"=SUM('{s_name}'!I2:I{stat_last_day_row})/60",  # 假日工時 9-12h
+            f"=SUM('{s_name}'!J2:J{stat_last_day_row})/60"   # 假日轉場加時
         ]
         ws_stat.append(row_val)
         
-        for c_idx in range(1, 13):
+        for c_idx in range(1, 14):
             cell = ws_stat.cell(row=row_counter, column=c_idx)
             cell.font = font_data
             cell.border = thin_border
@@ -344,10 +358,10 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
     last_stat_row = 1 + len(emp_dict)
     val_rows = [
         ['1. 原始服務紀錄總工時', raw_total_service_hours, '來自《服務紀錄總表.xlsx》合法服務工時總計', ''],
-        ['2. 統計表總工時 (含轉場)', f"=SUM('員工工時統計表'!F2:H{last_stat_row})+SUM('員工工時統計表'!J2:K{last_stat_row})", '統計表工時欄位 (F:H, J:K) 之全體員工工時總計', ''],
-        ['3. 轉場工時總計', f"=SUM('員工工時統計表'!I2:I{last_stat_row})+SUM('員工工時統計表'!L2:L{last_stat_row})", '統計表平日轉場加時(I欄) + 假日轉場加時(L欄)', ''],
-        ['4. 統計表淨服務工時', "=B3-B4", '統計表總工時 扣除 轉場工時總計 (B3 - B4)', ''],
-        ['5. 比對結果與差值', "=B2-B5", '原始總工時與淨服務工時之差值 (B2 - B5)', '=IF(ROUND(ABS(B6),4)=0, "相符 (OK)", "不符 (請檢查)")']
+        ['2. 統計表服務工時總計', f"=SUM('員工工時統計表'!F2:H{last_stat_row})+SUM('員工工時統計表'!J2:L{last_stat_row})", '統計表服務工時欄位 (F:H, J:L) 之全體員工總計', ''],
+        ['3. 統計表轉場工時總計', f"=SUM('員工工時統計表'!I2:I{last_stat_row})+SUM('員工工時統計表'!M2:M{last_stat_row})", '統計表平日轉場加時(I欄) + 假日轉場加時(M欄)', ''],
+        ['4. 統計表總出勤工時 (服務+轉場)', "=B3+B4", '統計表服務工時 加總 轉場工時 (B3 + B4)', ''],
+        ['5. 比對結果與差值 (原始 vs 統計服務工時)', "=B2-B3", '原始服務總工時與統計表服務工時之差值 (B2 - B3)', '=IF(ROUND(ABS(B6),4)=0, "相符 (OK)", "不符 (請檢查)")']
     ]
     
     for r_idx, row_data in enumerate(val_rows, start=2):
@@ -395,7 +409,6 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
             col_letter = get_column_letter(col[0].column)
             for cell in col:
                 val_str = str(cell.value or '')
-                # Handle double-width CJK characters in length calculation
                 cell_len = sum(2 if ord(c) > 127 else 1 for c in val_str)
                 if cell_len > max_len:
                     max_len = cell_len
@@ -406,8 +419,54 @@ def build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_ho
     print(f"成功產出薪資單工時統計表: {OUTPUT_PAYROLL}")
 
 
+def generate_individual_payrolls(emp_dict, daily_records):
+    """複製好寶寶薪資格式.xlsx 模版，依員工填入工時與基本資料並儲存為個人薪資檔案"""
+    if not INPUT_TEMPLATE.exists():
+        print(f"\n【警告】找不到個人薪資單模版檔案：{INPUT_TEMPLATE}")
+        return
+
+    print("\n=== 開始產出個人薪資單 Excel 檔案 ===")
+    for nanny_name, emp_info in emp_dict.items():
+        wb = openpyxl.load_workbook(INPUT_TEMPLATE)
+        ws = wb.active
+        
+        emp_records = daily_records.get(nanny_name, {})
+        
+        # 累計當月各類別工時 (單位: 分鐘)
+        norm_min = sum(r.get('正常工時', 0) for r in emp_records.values())
+        ot_9_10_min = sum(r.get('平日加班_9_10h', 0) for r in emp_records.values())
+        ot_11_12_min = sum(r.get('平日加班_11_12h', 0) for r in emp_records.values())
+        weekday_transit_min = sum(r.get('平日轉場加時', 0) for r in emp_records.values())
+        hol_0_2_min = sum(r.get('假日工時_0_2h', 0) for r in emp_records.values())
+        hol_3_8_min = sum(r.get('假日工時_3_8h', 0) for r in emp_records.values())
+        hol_9_12_min = sum(r.get('假日工時_9_12h', 0) for r in emp_records.values())
+        weekend_transit_min = sum(r.get('假日轉場加時', 0) for r in emp_records.values())
+        
+        # 寫入個人基本資料 (紅底標題旁邊的黃色欄位)
+        ws['C5'] = emp_info['姓名']
+        ws['G5'] = emp_info['職稱']
+        ws['E6'] = emp_info['身分證字號']
+        ws['J6'] = emp_info['出生日期']
+        
+        # 寫入工時時數 (轉換為小時)
+        ws['E8'] = norm_min / 60.0
+        ws['E9'] = weekday_transit_min / 60.0
+        ws['E16'] = ot_9_10_min / 60.0
+        ws['E17'] = ot_11_12_min / 60.0
+        ws['E18'] = hol_0_2_min / 60.0
+        ws['E19'] = hol_3_8_min / 60.0
+        ws['E20'] = hol_9_12_min / 60.0
+        ws['E21'] = weekend_transit_min / 60.0
+        
+        # 檔名格式: <員工姓名>_<身份證字號>.xlsx
+        out_filename = f"{emp_info['姓名']}_{emp_info['身分證字號']}.xlsx"
+        out_path = DIR_PAYROLL / out_filename
+        wb.save(out_path)
+        print(f"成功產出個人薪資單: {out_filename}")
+
+
 def main():
-    print("=== 開始執行保母薪資單工時統計表與工時統計分析 ===")
+    print("=== 開始執行保母薪資單工時統計表與個人薪資單生成 ===")
     if not check_input_files_exist():
         input("\n請按 Enter 鍵結束...")
         return
@@ -416,7 +475,8 @@ def main():
         df_emp, df_hol, df_srv = load_input_data()
         emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates = clean_and_process_data(df_emp, df_hol, df_srv)
         build_payroll_excel(emp_dict, daily_records, anomalies, raw_total_service_hours, all_dates)
-        print(f"\n=== 分析完成！異常紀錄筆數: {len(anomalies)} ===")
+        generate_individual_payrolls(emp_dict, daily_records)
+        print(f"\n=== 全部分析與個人薪資單產出完成！異常紀錄筆數: {len(anomalies)} ===")
     except Exception as e:
         print(f"\n【執行發生錯誤】{e}")
     finally:
