@@ -1,0 +1,18 @@
+[project]
+name = "03-web-crawer-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "pmake", email = "pmake@users.noreply.github.com" }
+]
+requires-python = ">=3.12.13"
+dependencies = [
+    "requests>=2.32.5",
+    "beautifulsoup4>=4.15.0",
+    "lxml>=6.1.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.13.0"]
+build-backend = "uv_build"
