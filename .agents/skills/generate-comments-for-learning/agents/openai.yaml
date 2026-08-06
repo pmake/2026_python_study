@@ -1,0 +1,5 @@
+interface:
+  display_name: "generate-comments-for-learning"
+  short_description: "Generates detailed, contextual, line-by-line learning comments."
+policy:
+  allow_implicit_invocation: false

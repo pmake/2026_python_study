@@ -1,0 +1,7 @@
+
+interface:
+  display_name: "Playwright Locator Generator"
+  short_description: "Generate optimal Playwright Python locator code based on HTML snippets copied from Chrome DevTools ("Copy element")."
+policy:
+  allow_implicit_invocation: false
+  default_prompt: "Please recommend an optimal Playwright Python locator for the following HTML snippet:"
