@@ -222,3 +222,5 @@ __marimo__/
 *.csv
 *.xlsx
 02_data_analysis/outputs/*
+.DS_Store
+google_auth_state.json
