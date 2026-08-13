@@ -80,6 +80,27 @@ def outline_single_file(page):
     # 定位 input (name=Filedata) 元素，並上傳檔案
     file_input.set_input_files(files_inside_given_folder)
     
+
+    # 等待上傳完成，以「動態讀取中」的 SVG (indeterminate-circle) 消失為判斷依據
+    # 避免誤抓到常駐在頁面上的 determinate-circle 導致逾時
+    loading_locator = page.locator("circle.mdc-circular-progress__indeterminate-circle, [role='progressbar']")
+    print("loading_locator", loading_locator)
+    try:
+        loading_locator.first.wait_for(state="attached", timeout=3000)
+    except Exception:
+        print("未找到動態載入圈")
+        pass
+
+    # 等待所有動態載入圈隱藏/消失
+    try:
+        for loader in loading_locator.all():
+            loader.wait_for(state="hidden")
+        print("檔案已上傳完成")
+    except Exception:
+        print("檔案已上傳，但有動態載入圈未消失")
+
+    input("請檢視頁面，完成後在終端機按下 Enter 鍵結束...")
+    
     return
 
     # 定位placeholder為"Ask a question or create something" 的textarea元素
@@ -100,7 +121,7 @@ if not DEFAULT_COOKIE_PATH.exists():
     get_google_auth_token()
 
 # 使用儲存的登入狀態造訪指定頁面
-visit_pages_with_google_auth("https://notebook.google.com/notebook/d9609d27-f9d7-4240-85c1-8af65ceb212b", outline_single_file)
+visit_pages_with_google_auth("https://notebook.google.com/notebook/850e5afe-729b-4df8-a05b-93c930000164", outline_single_file)
 
 # 關閉瀏覽器實例並釋放資源
 browser.close()
