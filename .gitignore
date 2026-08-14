@@ -224,3 +224,4 @@ __marimo__/
 02_data_analysis/outputs/*
 .DS_Store
 google_auth_state.json
+03_web_crawer_learning/src/03_web_crawer_learning/data/*.md
