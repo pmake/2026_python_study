@@ -1,17 +1,18 @@
 from pathlib import Path
 from cloakbrowser import launch
 from playwright.sync_api import TimeoutError
-
 import time
 import pyperclip
 
 # 取得目前 .py 檔案所在的同層目錄絕對路徑
 BASE_DIR = Path(__file__).parent
 DEFAULT_COOKIE_PATH = BASE_DIR / "google_auth_state.json"
-# 定義pdf所在的資料夾路徑
+# 定義pdf所在的data資料夾路徑。
+# .resolve().parents[2]表示從本檔案往回退兩層目錄，因為data資料夾是在本檔案的上兩層目錄層級。
 DATA_DIR = Path(__file__).resolve().parents[2] / 'data'
 print("pdf所在的資料夾", DATA_DIR)
 
+url_to_browse = "https://notebook.google.com/notebook/c908d939-45fe-4812-a29b-a392ab25e575"
 
 # 啟動 CloakBrowser 防偵測 Chromium 瀏覽器實例
 browser = launch(
@@ -37,7 +38,7 @@ def get_google_auth_token(cookie_path=DEFAULT_COOKIE_PATH):
 
     # 暫停程式執行，等待使用者在終端機手動完成登入
     print("請於開啟的瀏覽器視窗中手動完成 Google 帳號登入...")
-    input("手動完成登入後，請在終端機按下 Enter 鍵以儲存登入狀態...")
+    # input("手動完成登入後，請在終端機按下 Enter 鍵以儲存登入狀態...")
 
     # 把目前已登入的狀態存成指定名稱的 JSON 檔案
     context.storage_state(path=cookie_path)
@@ -80,6 +81,7 @@ def visit_pages_with_google_auth(url, action, cookie_path=DEFAULT_COOKIE_PATH):
 # 要對網頁執行的動作
 def outline_single_file(page):
     print("目標頁面標題：", page.title())
+    print("====== 頁面任務處理開始。 ======")
     # 先將視窗放到最大，否則RWD可能會將相關介面藏起來
     page.set_viewport_size({"width": 1920, "height": 1080})
 
@@ -93,13 +95,13 @@ def outline_single_file(page):
     # 依檔案數量，執行對應次數的處理
     for f in files_inside_given_folder:
         print(f'目前處理檔案：{f}')
+
         # 判斷是否存在既有來源
         try:
             page.get_by_role("checkbox", name="Select all sources").wait_for(state="attached", timeout=3000)
             print("有既存來源")
 
             # 先移除既存來源
-            page.get_by_role("checkbox", name="Select all sources").wait_for(state="visible", timeout=3000)
             page.get_by_role("button", name="More").first.click()
             page.get_by_role("menuitem", name="Remove source").click()
             page.get_by_role("button", name="Delete").click()
@@ -109,16 +111,6 @@ def outline_single_file(page):
         except TimeoutError:
             print("沒有來源")
             pass
-
-        # 移除對話紀錄。放在移除來源的外面，避免只移除了來源卻有舊對話紀錄存在的情況
-        page.get_by_role("button", name="Chat options").click()
-        delete_chat_btn =  page.get_by_role("menuitem", name="Delete chat history Chat")
-        if delete_chat_btn.is_disabled():
-            print("沒有對話紀錄")
-        else:
-            page.get_by_role("menuitem", name="Delete chat history Chat").click()
-            page.get_by_role("button", name="Delete").click()
-            print("已移除對話紀錄")
 
         # 上傳新檔案
         # 檢查上傳介面是否出現在畫面上，若沒有就點擊上傳介面
@@ -171,37 +163,65 @@ def outline_single_file(page):
             print("摘要產生中...")
             page.get_by_role("button", name="Stop generating").wait_for(state="hidden", timeout=60000)
             print("摘要已產生")
+            try:
+                # 複製摘要另存
+                # 1. 等待最後一個copy按鈕出現
+                time.sleep(3)
+                # 2. 點擊複製按鈕
+                page.get_by_role("button", name="Copy model response to").last.click()
+                # 3. 稍等 0.5 秒確保瀏覽器已將內容寫入系統剪貼簿
+                time.sleep(0.5)
+                # 4. 取得剪貼簿內容
+                summary_content = pyperclip.paste()
+                # 5. 以原 PDF 檔名產生 .md 檔（例如 "報告.pdf" 轉為 "報告.md"）
+                output_md_path = f.with_suffix(".md")
+                output_md_path.write_text(summary_content, encoding="utf-8")
+                print(f"✅ 已成功將摘要存至：{output_md_path.name}")
+            except TimeoutError:
+                print("儲存摘要時發生不明錯誤，可能和AI相關")
+                pass
         except TimeoutError:
             print("摘要未在60秒內產生")
             pass
 
 
-        # 複製摘要另存
-        # 1. 等待最後一個copy按鈕出現
-        time.sleep(3)
-        # 2. 點擊複製按鈕
-        page.get_by_role("button", name="Copy model response to").last.click()
-        # 3. 稍等 0.5 秒確保瀏覽器已將內容寫入系統剪貼簿
-        time.sleep(0.5)
-        # 4. 取得剪貼簿內容
-        summary_content = pyperclip.paste()
-        # 5. 以原 PDF 檔名產生 .md 檔（例如 "報告.pdf" 轉為 "報告.md"）
-        output_md_path = f.with_suffix(".md")
-        output_md_path.write_text(summary_content, encoding="utf-8")
-        print(f"✅ 已成功將摘要存至：{output_md_path.name}")
 
 
-    input("請檢視頁面，完成後在終端機按下 Enter 鍵結束...")
-    return
+        # 移除對話紀錄。放在移除來源的外面，避免只移除了來源卻有舊對話紀錄存在的情況
+        # 放在後面處理是因為如果一開始是無來源的情況，預設會自動跳出上傳介面，會導致聊天選項被遮住而無法點擊
+        page.get_by_role("button", name="Chat options").click()
+        print("點擊Chat options")
+        delete_chat_btn =  page.get_by_role("menuitem", name="Delete chat history")
+        if delete_chat_btn.is_disabled():
+            print("沒有對話紀錄")
+        else:
+            page.get_by_role("menuitem", name="Delete chat history Chat").click()
+            page.get_by_role("button", name="Delete", exact=True).click()
+            print("已移除對話紀錄")
+
+        # 移除來源
+        try:
+            page.get_by_role("button", name="More").first.click()
+            page.get_by_role("menuitem", name="Remove source").click()
+            page.get_by_role("button", name="Delete").click()
+            print("已移除來源")
+        except TimeoutError:
+            print("移除來源逾時")
+            pass
+
+
+    print('====== 頁面任務處理完成。 ======')
     
 
     
     
 
 # 使用儲存的登入狀態造訪指定頁面（若未登入或過期會自動觸發登入流程）
-visit_pages_with_google_auth("https://notebook.google.com/notebook/c908d939-45fe-4812-a29b-a392ab25e575", outline_single_file)
+visit_pages_with_google_auth(url_to_browse, outline_single_file)
 
 # 關閉瀏覽器實例並釋放資源
+print("3秒緩衝後關閉瀏覽器，讓動作收尾。")
+time.sleep(3)
 browser.close()
 
 
