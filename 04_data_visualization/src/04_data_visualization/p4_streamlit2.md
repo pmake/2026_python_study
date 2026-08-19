@@ -1,0 +1,10 @@
+- 利用streamlit 建立1個新頁面
+    - 新頁面內容
+        - 使用 @database.py 中的supabase物件，用players table inner join career_summaries table
+        - 使用personid做關聯，選取所有欄位資料
+        - 使用firstName過濾"Lebron","Carmelo"兩名球員
+        - 使用plotly 建立1個雷達圖，比較5項數值: ppg, rpg, apg, bpg, mpg
+            - 各項指標以career_summaries中的max值做標準化
+        - 將此圖在頁面上顯示
+        - 頁面儲存在 page/球員分析頁.py 中
+        - 將 page/球員分析頁.py 加入到 @p4_streamlit.py 中的navigation中

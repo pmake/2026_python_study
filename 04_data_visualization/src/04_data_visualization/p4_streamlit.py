@@ -162,34 +162,44 @@ def home():
     st.subheader("🧭 快速導航與體驗指南")
     st.info("👈 請利用左側邊欄的 **Navigation 導航選單** 切換頁面，或點擊下方卡片直接探索：")
 
-    g_col1, g_col2 = st.columns(2)
+    g_col1, g_col2, g_col3 = st.columns(3)
 
     with g_col1:
         with st.container(border=True):
-            st.markdown("### 📋 資料說明頁 (`page/資料說明頁.py`)")
+            st.markdown("### 📋 資料說明頁")
             st.markdown("""
-            - 展示 Plotly 內建的經典 **Fisher's Iris (鳶尾花)** 資料集
-            - 包含關鍵指標統計、欄位定義對照表、互動篩選與 CSV 檔案下載
+            - 展示 Plotly 經典 **Iris (鳶尾花)** 資料集
+            - 包含關鍵指標統計、欄位定義對照表與 CSV 檔案下載
             """)
             st.caption("路徑：`page/資料說明頁.py`")
 
     with g_col2:
         with st.container(border=True):
-            st.markdown("### 📊 點圖頁 (`page/點圖頁.py`)")
+            st.markdown("### 📊 點圖頁")
             st.markdown("""
-            - 根據 Iris 鳶尾花資料集製作 Plotly 多維度互動點圖 (Scatter Plot)
-            - 支援自訂 X/Y 軸、點大小、邊緣分佈圖 (Violin/Box)、趨勢線、3D 立體點圖與散佈圖矩陣
+            - 製作 Plotly 多維度互動點圖 (Scatter Plot)
+            - 支援自訂 X/Y 軸、邊緣分佈、趨勢線與 3D 散點圖
             """)
             st.caption("路徑：`page/點圖頁.py`")
+
+    with g_col3:
+        with st.container(border=True):
+            st.markdown("### 🏀 球員分析頁")
+            st.markdown("""
+            - 查詢 Supabase 資料庫 Join 球員與生涯數據
+            - 以全體球員最大值標準化 5 大指標並繪製雷達圖
+            """)
+            st.caption("路徑：`page/球員分析頁.py`")
 
 
 # ==========================================
 # 官方新版 Navigation API 設定
 # ==========================================
-# 依據 P4_streamlit.md 規定：
+# 依據 P4_streamlit.md 與 p4_streamlit2.md 規定：
 # - 首頁裡面要放入：
 #   - 資料說明頁，路徑在 page/資料說明頁.py
 #   - 點圖頁，路徑在 page/點圖頁.py
+#   - 球員分析頁，路徑在 page/球員分析頁.py
 #   - 做出 navigation
 #   - 使用 Streamlit 新版官方 Navigation API
 pages = {
@@ -197,6 +207,7 @@ pages = {
         st.Page(home, title="首頁", icon="🏠", default=True),
         st.Page("page/資料說明頁.py", title="資料說明頁", icon="📋"),
         st.Page("page/點圖頁.py", title="點圖頁", icon="📊"),
+        st.Page("page/球員分析頁.py", title="球員分析頁", icon="🏀"),
     ]
 }
 
