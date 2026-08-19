@@ -1,0 +1,7 @@
+- 利用streamlit 建立說明首頁
+    - 標題 streamlit 的功能介紹
+    - 加入強調重點10個
+    - 加上emoji、顏色、和有趣的圖片
+    - 以p3_streamlit.py實作
+    - 使用goal模式，過程中不需詢問
+    - 只能修改p3_streamlit.py檔案
