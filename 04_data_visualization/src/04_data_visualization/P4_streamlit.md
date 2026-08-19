@@ -1,0 +1,13 @@
+- 利用streamlit 建立以下3個頁面
+    - 首頁
+        - 簡單說明 streamlit和plotly和pandas的結合
+    - 資料說明頁
+        - 展示一下 plotly裡面iris的df data
+    - 點圖頁
+        - 根據iris資料，利用 plotly 製作點圖
+- 首頁裡面要放入
+    - 資料說明頁，路徑在 page/資料說明頁.py
+    - 點圖頁，路徑在 page/點圖頁.py
+    - 做出navigation
+    - 使用Steamlit 新版官方 Navagation API
+- 分別給我3個完整.py檔，不要分段
