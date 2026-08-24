@@ -9,12 +9,14 @@ dependencies = [
     "02-data-analysis",
     "03-web-crawer-learning",
     "04-data-visualization",
+    "05-machine-learning",
 ]
 
 [tool.uv.sources]
 02-data-analysis = { workspace = true }
 03-web-crawer-learning = { workspace = true }
 04-data-visualization = { workspace = true }
+05-machine-learning = { workspace = true }
 
 # 宣告工作區包含所有子資料夾
 [tool.uv.workspace]

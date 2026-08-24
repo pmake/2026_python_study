@@ -6,10 +6,10 @@ resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
@@ -18,6 +18,7 @@ members = [
     "02-data-analysis",
     "03-web-crawer-learning",
     "04-data-visualization",
+    "05-machine-learning",
     "2026-python-study",
 ]
 
@@ -89,6 +90,11 @@ requires-dist = [
 ]
 
 [[package]]
+name = "05-machine-learning"
+version = "0.1.0"
+source = { editable = "05_machine_learning" }
+
+[[package]]
 name = "2026-python-study"
 version = "0.1.0"
 source = { virtual = "." }
@@ -96,6 +102,7 @@ dependencies = [
     { name = "02-data-analysis" },
     { name = "03-web-crawer-learning" },
     { name = "04-data-visualization" },
+    { name = "05-machine-learning" },
     { name = "fastapi", extra = ["standard"] },
 ]
 
@@ -104,6 +111,7 @@ requires-dist = [
     { name = "02-data-analysis", editable = "02_data_analysis" },
     { name = "03-web-crawer-learning", editable = "03_web_crawer_learning" },
     { name = "04-data-visualization", editable = "04_data_visualization" },
+    { name = "05-machine-learning", editable = "05_machine_learning" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.139.0" },
 ]
 
