@@ -1,4 +1,7 @@
 # 04 Data Visualization
+## 執行Streamlit指令
+- 需在終端輸入以下指令:
+    - ".venv\Scripts\python -m streamlit run 04_data_visualization\src\04_data_visualization\p4_streamlit.py"
 ## Deploy 到 Streamlit.io
 - 點擊本地執行的 Streamlit 網址右上角的「Deploy」->「Deploy to Streamlit Community Cloud」
 - 接著依程序走
