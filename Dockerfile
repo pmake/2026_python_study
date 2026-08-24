@@ -1,5 +1,5 @@
 # 第一次 FROM：引入一個裝滿強大工具（如 uv）的「建置專用」環境
-FROM astral-sh/uv:python3.12.13-bookworm-slim AS builder
+FROM astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN uv sync --frozen --no-dev
 # COPY --from=builder /app /app：這是最關鍵的語法。它像是一座傳送門，只把我們在第一階段已經在 /app 內編譯好、裝好的乾淨 .venv 虛擬環境以及你的程式碼，隔空複製到這第二個新環境中。
 
 # 結果：最終打包出來、要上傳到 Cloud Run 的 Image 裡面完全沒有 uv 軟體，也沒有編譯時的快取，只剩下精簡的 Python runtime 和安裝好的套件。
-FROM python:3.12.13-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
