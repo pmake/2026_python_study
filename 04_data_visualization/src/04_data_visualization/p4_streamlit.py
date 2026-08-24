@@ -162,7 +162,7 @@ def home():
     st.subheader("🧭 快速導航與體驗指南")
     st.info("👈 請利用左側邊欄的 **Navigation 導航選單** 切換頁面，或點擊下方卡片直接探索：")
 
-    g_col1, g_col2, g_col3 = st.columns(3)
+    g_col1, g_col2, g_col3, g_col4 = st.columns(4)
 
     with g_col1:
         with st.container(border=True):
@@ -191,15 +191,25 @@ def home():
             """)
             st.caption("路徑：`page/球員分析頁.py`")
 
+    with g_col4:
+        with st.container(border=True):
+            st.markdown("### 📥 球員資料下載")
+            st.markdown("""
+            - Supabase 查詢 3 表關聯 (球員、生涯、球隊)
+            - 提供所有球員下拉選單並支援一鍵匯出 **.xlsx** 檔案
+            """)
+            st.caption("路徑：`page/球員資料下載.py`")
+
 
 # ==========================================
 # 官方新版 Navigation API 設定
 # ==========================================
-# 依據 P4_streamlit.md 與 p4_streamlit2.md 規定：
+# 依據 P4_streamlit.md、p4_streamlit2.md 與 p4_streamlit3.md 規定：
 # - 首頁裡面要放入：
 #   - 資料說明頁，路徑在 page/資料說明頁.py
 #   - 點圖頁，路徑在 page/點圖頁.py
 #   - 球員分析頁，路徑在 page/球員分析頁.py
+#   - 球員資料下載，路徑在 page/球員資料下載.py
 #   - 做出 navigation
 #   - 使用 Streamlit 新版官方 Navigation API
 pages = {
@@ -208,6 +218,7 @@ pages = {
         st.Page("page/資料說明頁.py", title="資料說明頁", icon="📋"),
         st.Page("page/點圖頁.py", title="點圖頁", icon="📊"),
         st.Page("page/球員分析頁.py", title="球員分析頁", icon="🏀"),
+        st.Page("page/球員資料下載.py", title="球員資料下載", icon="📥"),
     ]
 }
 

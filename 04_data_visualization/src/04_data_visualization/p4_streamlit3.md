@@ -1,0 +1,9 @@
+- 利用streamlit 新增一個頁面，叫做球員資料下載
+    - 使用 @database.py 中的supabase物件，找3張表: career_summaries, players, teams
+        - career_summaries 和 players 用personid做關聯
+        - players 和 teams 用teamId做關聯
+        - inner join
+        - 選擇所有欄位
+    - 然後在介面上給我一個下拉選單，選項是所有球員的firstname + lastname，以及一個下載按鈕，點擊後會下載球員資料為.xlsx檔案
+    - 頁面儲存在 page/球員資料下載.py 中
+    - 將 page/球員資料下載.py 加入到 @p4_streamlit.py 中的navigation中
