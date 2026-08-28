@@ -54,6 +54,7 @@
         - data.yaml
     - 至 https://colab.research.google.com/
     - 建立一個新的筆記本
+        - 完成的lab: https://colab.research.google.com/drive/1b2vVANuQRNAAjD8cT7jOfSUxjJvPHZBP#scrollTo=X4M5Y7iIyNHI
     - 點擊右上角"連線"按钮旁邊的下三角icon，選擇變更執行階段類型，硬體加速器選擇TPU或GPU類型，點擊儲存，然後點擊"連線"按鈕等待取得分配的運算資源
     - 點擊左側的資料夾圖示/掛接雲端硬碟/選擇帳戶 讓Colab取得Google Drive存取權
         - 點擊左側的資料夾圖示，會出現Google Drive的資料夾與檔案
@@ -67,9 +68,9 @@
         - 新增一個程式碼區塊並複製"2026_python_study\06_computer_vision\src\06_computer_vision\yolo_train.py"裡面的程式碼到此程式碼區塊中，並點擊執行開始訓練。
     - 訓練完成後，結果會自動儲存在Colab的暫存磁碟"/content/runs/detect"裡面
     - 檢視參數評估結果，不滿意可修改data.yaml檔案的相關參數重新訓練。
+        - 增加樣本數才是提升準確率最有效的方法。
     - "/content/runs/detect/yolo26n_car_plate/weights/best.pt" 檔案即為訓練好的模型檔，可點擊右側3個小點選擇下載，即可應用於推論。
         - 如果訓練多次則會有多個"yolo26n_car_plate-<n>"資料夾，<n>代表第幾次訓練
         - 將yolo_detection.py裡的"model = YOLO("yolo26n.pt")"改為"model = YOLO("best.pt")"，然後執行yolo_detection.py，即可應用於推論。
-    
     
     
