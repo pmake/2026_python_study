@@ -19,6 +19,7 @@ members = [
     "03-web-crawer-learning",
     "04-data-visualization",
     "05-machine-learning",
+    "06-computer-vision",
     "2026-python-study",
 ]
 
@@ -115,6 +116,11 @@ requires-dist = [
 ]
 
 [[package]]
+name = "06-computer-vision"
+version = "0.1.0"
+source = { editable = "06_computer_vision" }
+
+[[package]]
 name = "2026-python-study"
 version = "0.1.0"
 source = { virtual = "." }
@@ -123,6 +129,7 @@ dependencies = [
     { name = "03-web-crawer-learning" },
     { name = "04-data-visualization" },
     { name = "05-machine-learning" },
+    { name = "06-computer-vision" },
     { name = "fastapi", extra = ["standard"] },
 ]
 
@@ -132,6 +139,7 @@ requires-dist = [
     { name = "03-web-crawer-learning", editable = "03_web_crawer_learning" },
     { name = "04-data-visualization", editable = "04_data_visualization" },
     { name = "05-machine-learning", editable = "05_machine_learning" },
+    { name = "06-computer-vision", editable = "06_computer_vision" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.139.0" },
 ]
 
