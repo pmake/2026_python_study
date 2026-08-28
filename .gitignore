@@ -238,3 +238,5 @@ google_auth_state.json
 *.png
 # 例外保留的展示或測試圖片
 !06_computer_vision/image/test_car.jpg
+!**/training_samples/*.png
+!**/training_samples/**/*.png

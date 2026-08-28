@@ -1,0 +1,27 @@
+{
+  "version": "0.4.36",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "car_plate",
+      "text": "",
+      "points": [
+        [
+          185.4605734767025,
+          220.1164874551971
+        ],
+        [
+          340.2992831541219,
+          253.44982078853047
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {}
+    }
+  ],
+  "imagePath": "Cars67.png",
+  "imageData": null,
+  "imageHeight": 275,
+  "imageWidth": 553
+}
