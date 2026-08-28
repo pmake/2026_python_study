@@ -1,0 +1,31 @@
+# ==============================================================================
+# YOLO 資料集設定檔 (Dataset Configuration File)
+# 作用: 定義訓練/驗證資料集的路徑、類別數量及類別名稱對應關係，供 YOLO 模型訓練 (train) 時讀取。
+# ==============================================================================
+
+# [FIRST OCCURRENCE: names] 類別名稱清單 (Class Names Mapping)
+# - 定義模型預測的類別名稱。清單中的順序（索引 0, 1, 2...）嚴格對應標註檔 (.txt) 中的 class_id。
+# - YOLO 模型在推論與畫框時，會透過此映射表將數字 ID (0) 轉換為可讀文字 ("car_plate")。
+names:
+  - car_plate  # class_id 0 對應的類別名稱 (車牌)
+
+# [FIRST OCCURRENCE: nc] 類別總數 (Number of Classes)
+# - 數值必須與 names 清單中的類別數量一致 (此處為 1)。
+# - YOLO 神經網路會依據此數值決定最後輸出層 (Head) 的分類卷積通道數/神經元數量。
+nc: 1
+
+# [FIRST OCCURRENCE: train] 訓練集圖片路徑 (Training Images Directory)
+# - 指向包含訓練影像的絕對路徑或相對於根目錄的相對路徑。
+# - 運作機制: YOLO 讀取此路徑下的圖片時，會自動搜尋同層級或平行的 labels/ 資料夾
+#   (例如自動將路徑中的 '/images' 替換為 '/labels')，以載入同名的 .txt 標註檔。
+# - 此處路徑為 Google Colab 掛載 Google 雲端硬碟後的標準目錄格式。
+train: /content/drive/MyDrive/Colab_YOLO_Practice/train/images  # 訓練集圖片路徑
+
+# [FIRST OCCURRENCE: val] 驗證集圖片路徑 (Validation Images Directory)
+# - 每個訓練週期 (Epoch) 結束時，YOLO 會使用此資料集評估模型的 mAP (平均精準度)、Precision 與 Recall。
+# - 驗證集不參與權重反向傳播更新，主要用於監控模型是否過擬合 (Overfitting) 及挑選最佳權重 (best.pt)。
+val: /content/drive/MyDrive/Colab_YOLO_Practice/val/images   # 驗證集圖片路徑
+
+# [FIRST OCCURRENCE: test] 測試集圖片路徑 (Test Images Directory - 選填)
+# - 用於模型完全訓練完成後進行最終盲測評估，非訓練必備項目，無獨立測試集時可留空。
+test: /content/drive/MyDrive/Colab_YOLO_Practice/test/images# 測試集圖片路徑 (可選)
