@@ -225,6 +225,7 @@ __marimo__/
 .DS_Store
 google_auth_state.json
 03_web_crawer_learning/src/03_web_crawer_learning/data/*.md
+*.mp4
 
 # PyTorch / YOLO Model Weights
 *.pt
@@ -239,4 +240,4 @@ google_auth_state.json
 # 例外保留的展示或測試圖片
 !06_computer_vision/image/test_car.jpg
 !**/training_samples/*.png
-!**/training_samples/**/*.png
+!**/training_samples/**/*.png
