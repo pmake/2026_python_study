@@ -7,7 +7,10 @@ authors = [
     { name = "pmake", email = "unique_ntsn@hotmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "anylabeling>=0.4.36",
+    "ultralytics>=8.4.131",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
