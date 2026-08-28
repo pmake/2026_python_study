@@ -29,7 +29,7 @@ def run_detection():
 
     # 2. 載入 YOLO26 模型 (yolo26n.pt 為輕量奈米版)
     print("[*] 正在載入 YOLO26 模型...")
-    model = YOLO("yolo26n.pt")
+    model = YOLO("best.pt")
 
     # 3. 進行物件偵測 (Inference)
     print("[*] 正在進行物件偵測推理...")
